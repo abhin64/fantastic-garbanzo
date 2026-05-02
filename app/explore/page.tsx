@@ -1,21 +1,22 @@
+import PageContainer from "@/app/components/PageContainer";
 import ExploreGrid from "./components/ExploreGrid";
 
 export default function ExplorePage() {
   return (
-    <main className="min-h-screen bg-black text-white">
-      <div className="max-w-2xl mx-auto px-4 pt-12 pb-24">
-        <header className="mb-10">
-          <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-widest mb-1">
-            LinkUp
-          </p>
-          <h1 className="text-3xl font-bold tracking-tight">Explore</h1>
-          <p className="text-neutral-500 text-sm mt-1.5">
-            Discover plans curated for you
-          </p>
-        </header>
+    <PageContainer>
+      <header className="px-5 pt-12 pb-7 mb-2">
+        <p className="text-label text-ink-tertiary uppercase tracking-widest mb-3">
+          LinkUp
+        </p>
+        <h1 className="text-display text-ink">Explore</h1>
+        <p className="text-body text-ink-secondary mt-2">
+          Plans worth making
+        </p>
+      </header>
 
+      <div className="px-5">
         <ExploreGrid />
       </div>
-    </main>
+    </PageContainer>
   );
 }

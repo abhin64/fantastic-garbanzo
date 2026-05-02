@@ -1,70 +1,79 @@
 "use client";
 
 import { useState } from "react";
-import { explorePosts, CATEGORIES, type Post } from "@/lib/data/explorePosts";
+import { explorePosts, type Post } from "@/lib/data/explorePosts";
+import { CATEGORIES } from "@/lib/data/categories";
 import ExploreCard from "./ExploreCard";
 import PostViewer from "./PostViewer";
+import SectionHeader from "@/app/components/SectionHeader";
+
+const IS_PAID_USER = false;
+
+function sortPosts(posts: Post[]): Post[] {
+  return [...posts].sort((a, b) => {
+    if (a.isAI !== b.isAI) return a.isAI ? 1 : -1;
+    if (a.isWeatherAware !== b.isWeatherAware) return a.isWeatherAware ? 1 : -1;
+    return a.title.localeCompare(b.title);
+  });
+}
 
 const INITIAL_COUNT = 6;
 const LOAD_MORE_STEP = 4;
 
 export default function ExploreGrid() {
   const [visibleCount, setVisibleCount] = useState<Record<string, number>>(
-    Object.fromEntries(CATEGORIES.map((c) => [c, INITIAL_COUNT]))
+    Object.fromEntries(CATEGORIES.map((c) => [c.id, INITIAL_COUNT]))
   );
   const [activePost, setActivePost] = useState<Post | null>(null);
 
-  const postsByCategory = Object.fromEntries(
-    CATEGORIES.map((cat) => [cat, explorePosts.filter((p) => p.category === cat)])
+  const sortedCategories = [...CATEGORIES].sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const postsByCategory = new Map(
+    sortedCategories.map((cat) => [
+      cat.id,
+      sortPosts(explorePosts.filter((p) => p.categoryId === cat.id)),
+    ])
   );
 
   return (
     <>
-      <div className="space-y-12">
-        {CATEGORIES.map((category) => {
-          const posts = postsByCategory[category];
+      <div className="space-y-10">
+        {sortedCategories.map((category) => {
+          const posts = postsByCategory.get(category.id) ?? [];
           if (!posts.length) return null;
 
-          const shown = posts.slice(0, visibleCount[category]);
+          const shown = posts.slice(0, visibleCount[category.id]);
           const hasMore = shown.length < posts.length;
-          const isPaidCategory = category === "AI Ideas" || category === "Weather-Aware";
 
           return (
-            <section key={category}>
-              {/* Section header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2.5">
-                  <h2 className="text-base font-semibold text-white tracking-tight">
-                    {category}
-                  </h2>
-                  {isPaidCategory && (
-                    <span className="inline-flex items-center bg-amber-400/10 border border-amber-400/25 text-amber-400 text-[9px] font-bold px-2 py-0.5 rounded-full tracking-widest uppercase">
-                      Premium
-                    </span>
-                  )}
-                </div>
-                <span className="text-[11px] text-neutral-600">
-                  {posts.length} ideas
-                </span>
-              </div>
+            <section key={category.id}>
+              <SectionHeader
+                title={category.name}
+                count={posts.length}
+                isPaid={category.isPaid}
+              />
 
-              {/* Masonry grid */}
               <div className="columns-2 md:columns-3 gap-3">
                 {shown.map((post) => (
-                  <ExploreCard key={post.id} post={post} onClick={setActivePost} />
+                  <ExploreCard
+                    key={post.id}
+                    post={post}
+                    isPaidUser={IS_PAID_USER}
+                    onClick={setActivePost}
+                  />
                 ))}
               </div>
 
-              {/* Load more */}
               {hasMore && (
                 <button
                   onClick={() =>
                     setVisibleCount((prev) => ({
                       ...prev,
-                      [category]: prev[category] + LOAD_MORE_STEP,
+                      [category.id]: prev[category.id] + LOAD_MORE_STEP,
                     }))
                   }
-                  className="mt-4 w-full py-2.5 rounded-xl border border-neutral-800 text-neutral-500 text-xs font-medium hover:border-neutral-600 hover:text-neutral-300 transition-colors"
+                  className="mt-3 w-full py-2.5 rounded-xl text-label text-ink-secondary uppercase tracking-widest transition-colors duration-150 hover:bg-surface"
+                  style={{ border: "1px solid var(--color-line-strong)" }}
                 >
                   Load more
                 </button>
@@ -78,6 +87,7 @@ export default function ExploreGrid() {
         <PostViewer
           initialPost={activePost}
           allPosts={explorePosts}
+          isPaidUser={IS_PAID_USER}
           onClose={() => setActivePost(null)}
         />
       )}

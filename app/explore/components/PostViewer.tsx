@@ -1,56 +1,62 @@
 "use client";
 
-import { useEffect, useRef, useMemo, useState, useCallback } from "react";
-import { type Post, CATEGORIES } from "@/lib/data/explorePosts";
+import { useEffect, useRef, useMemo, useState } from "react";
+import { type Post } from "@/lib/data/explorePosts";
+import { CATEGORIES } from "@/lib/data/categories";
+import Modal from "@/app/components/Modal";
+import IconButton from "@/app/components/IconButton";
+import Badge from "@/app/components/Badge";
 
 interface Props {
   initialPost: Post;
   allPosts: Post[];
+  isPaidUser: boolean;
   onClose: () => void;
 }
 
-export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
+function LockIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="white" aria-hidden>
+      <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+    </svg>
+  );
+}
+
+export default function PostViewer({ initialPost, allPosts, isPaidUser, onClose }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Build a flat ordered list:
-  // 1. All posts in the clicked post's category (clicked post first)
-  // 2. Then remaining categories in their defined order, wrapping around
   const orderedPosts = useMemo(() => {
-    const catIndex = CATEGORIES.indexOf(initialPost.category);
-    const orderedCats = [
-      ...CATEGORIES.slice(catIndex),
-      ...CATEGORIES.slice(0, catIndex),
+    const sortedCatIds = [...CATEGORIES]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((c) => c.id);
+
+    const catIndex = sortedCatIds.indexOf(initialPost.categoryId);
+    const orderedCatIds = [
+      ...sortedCatIds.slice(catIndex),
+      ...sortedCatIds.slice(0, catIndex),
     ];
 
-    const byCat = orderedCats.flatMap((cat) =>
-      allPosts.filter((p) => p.category === cat)
+    const byCat = orderedCatIds.flatMap((id) =>
+      allPosts.filter((p) => p.categoryId === id)
     );
 
-    // Ensure the clicked post is truly first
     const clickedIdx = byCat.findIndex((p) => p.id === initialPost.id);
     if (clickedIdx > 0) {
-      return [
-        byCat[clickedIdx],
-        ...byCat.slice(0, clickedIdx),
-        ...byCat.slice(clickedIdx + 1),
-      ];
+      return [byCat[clickedIdx], ...byCat.slice(0, clickedIdx), ...byCat.slice(clickedIdx + 1)];
     }
     return byCat;
   }, [initialPost, allPosts]);
 
-  // Track visible slide via IntersectionObserver
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
     const slides = container.querySelectorAll<HTMLElement>("[data-slide]");
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
-          if (e.isIntersecting) {
+          if (e.isIntersecting)
             setCurrentIndex(Number((e.target as HTMLElement).dataset.slide));
-          }
         });
       },
       { root: container, threshold: 0.6 }
@@ -59,69 +65,49 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
     return () => obs.disconnect();
   }, [orderedPosts]);
 
-  // Close on Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Prevent body scroll while viewer is open
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
-  }, []);
-
   const current = orderedPosts[currentIndex];
-  const isPaid = current?.isAI || current?.isWeatherAware;
-
-  // Category change label: show a brief banner when category switches
-  const prevCat = currentIndex > 0 ? orderedPosts[currentIndex - 1]?.category : null;
-  const isCategoryChange = prevCat !== null && prevCat !== current?.category;
+  const prevCat = currentIndex > 0 ? orderedPosts[currentIndex - 1]?.categoryId : null;
+  const isCategoryChange = prevCat !== null && prevCat !== current?.categoryId;
+  const isPaywalled = (current?.isAI || current?.isWeatherAware) && !isPaidUser;
+  const categoryName = CATEGORIES.find((c) => c.id === current?.categoryId)?.name ?? "";
 
   return (
-    <div className="fixed inset-0 z-50 bg-black" role="dialog" aria-modal>
-      {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5 pt-5 pb-3">
-        {/* Progress pills */}
-        <div className="flex gap-1 flex-1 mr-4">
+    <Modal background="bg-black">
+      {/* Progress + close */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center gap-3 px-5 pt-5 pb-3">
+        <div className="flex gap-px flex-1">
           {orderedPosts.slice(0, 30).map((_, i) => (
             <div
               key={i}
-              className={`h-[2px] flex-1 rounded-full transition-colors duration-200 ${
-                i === currentIndex
-                  ? "bg-white"
-                  : i < currentIndex
-                  ? "bg-white/40"
-                  : "bg-white/15"
+              className={`h-px flex-1 rounded-full transition-colors duration-200 ${
+                i === currentIndex ? "bg-white" : i < currentIndex ? "bg-white/35" : "bg-white/15"
               }`}
             />
           ))}
         </div>
-
-        {/* Close */}
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors flex-shrink-0"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
+        <IconButton onClick={onClose} aria-label="Close" variant="dark">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
           </svg>
-        </button>
+        </IconButton>
       </div>
 
-      {/* Category transition label */}
+      {/* Category change label */}
       {isCategoryChange && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full">
-          <span className="text-[10px] font-semibold text-white/70 uppercase tracking-widest">
-            {current?.category}
-          </span>
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 animate-slide-up">
+          <div className="backdrop-blur-sm px-3 py-1 rounded-full border border-white/15" style={{ background: "rgba(255,255,255,0.10)" }}>
+            <span className="text-label text-white/70 uppercase tracking-widest">{categoryName}</span>
+          </div>
         </div>
       )}
 
-      {/* Slides — vertical scroll snap */}
+      {/* Slides */}
       <div
         ref={containerRef}
         className="h-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
@@ -129,6 +115,7 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
       >
         {orderedPosts.map((post, i) => {
           const postIsPaid = post.isAI || post.isWeatherAware;
+          const catName = CATEGORIES.find((c) => c.id === post.categoryId)?.name;
           return (
             <div
               key={post.id}
@@ -142,26 +129,17 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
                 className="absolute inset-0 w-full h-full object-cover"
                 loading={i < 3 ? "eager" : "lazy"}
               />
-
-              {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent pointer-events-none" />
-
-              {/* Content */}
-              <div className="absolute bottom-0 left-0 right-0 px-6 pb-14">
-                {postIsPaid && (
-                  <span className="inline-block mb-3 bg-amber-400 text-black text-[9px] font-bold px-2.5 py-0.5 rounded-full tracking-widest uppercase">
-                    Paid
-                  </span>
-                )}
-                <p className="text-[10px] font-semibold text-white/50 uppercase tracking-widest mb-1.5">
-                  {post.category}
-                </p>
-                <h2 className="text-2xl font-semibold text-white leading-tight mb-2">
-                  {post.title}
-                </h2>
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{ background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.25) 45%, transparent 100%)" }}
+              />
+              <div className="absolute bottom-0 left-0 right-0 px-6 pb-12">
+                {postIsPaid && <div className="mb-3"><Badge variant="paid" /></div>}
+                <p className="text-label text-white/45 uppercase tracking-widest mb-2">{catName}</p>
+                <h2 className="text-h1 text-white leading-tight mb-2">{post.title}</h2>
                 {post.location && (
-                  <p className="flex items-center gap-1.5 text-sm text-white/55">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <p className="flex items-center gap-1.5 text-caption text-white/55">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                       <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                     </svg>
                     {post.location}
@@ -173,15 +151,44 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
         })}
       </div>
 
-      {/* Swipe hint — only on first slide */}
-      {currentIndex === 0 && (
-        <div className="absolute bottom-7 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1 pointer-events-none animate-bounce">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-40">
-            <polyline points="18 15 12 9 6 15" />
-          </svg>
-          <span className="text-[9px] text-white/30 uppercase tracking-widest">Swipe up</span>
+      {/* Paywall overlay */}
+      {isPaywalled && (
+        <div
+          className="absolute inset-0 z-30 flex items-end justify-center pb-16 animate-fade-in"
+          style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(20px)" }}
+        >
+          <div className="bg-[#F9F6F2] rounded-2xl p-7 mx-5 w-full max-w-sm text-center shadow-overlay">
+            <div className="w-14 h-14 rounded-full mx-auto mb-5 flex items-center justify-center bg-ink shadow-card">
+              <LockIcon />
+            </div>
+            <h3 className="text-h2 text-ink mb-1">LinkUp Premium</h3>
+            <p className="text-body text-ink-secondary mb-7">
+              This feature requires a Premium membership
+            </p>
+            <button
+              className="w-full py-3.5 rounded-xl text-white text-h4 bg-ink mb-3 transition-opacity hover:opacity-80"
+            >
+              Upgrade to Premium
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full py-2.5 text-body text-ink-secondary hover:text-ink transition-colors duration-150"
+            >
+              Not now
+            </button>
+          </div>
         </div>
       )}
-    </div>
+
+      {/* Swipe hint */}
+      {currentIndex === 0 && (
+        <div className="absolute bottom-7 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1 pointer-events-none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-25">
+            <polyline points="18 15 12 9 6 15" />
+          </svg>
+          <span className="text-label text-white/20 uppercase tracking-widest">Swipe up</span>
+        </div>
+      )}
+    </Modal>
   );
 }
