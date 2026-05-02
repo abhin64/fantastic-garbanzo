@@ -21,7 +21,7 @@ export default function ExploreGrid() {
 
   return (
     <>
-      <div className="space-y-12">
+      <div className="space-y-10">
         {CATEGORIES.map((category) => {
           const posts = postsByCategory[category];
           if (!posts.length) return null;
@@ -52,7 +52,8 @@ export default function ExploreGrid() {
                       [category]: prev[category] + LOAD_MORE_STEP,
                     }))
                   }
-                  className="mt-3 w-full py-2.5 rounded-xl border border-line text-label text-ink-tertiary uppercase tracking-widest hover:border-line-strong hover:text-ink-secondary transition-colors duration-150"
+                  className="mt-3 w-full py-2.5 rounded-xl text-label text-ink-secondary uppercase tracking-widest transition-colors duration-150 hover:bg-surface"
+                  style={{ border: "1px solid var(--color-line-strong)" }}
                 >
                   Load more
                 </button>

@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 
 interface Props {
   children: React.ReactNode;
+  background?: string;
 }
 
-export default function Modal({ children }: Props) {
+export default function Modal({ children, background = "bg-black" }: Props) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Defer one frame so the opacity transition fires
     const raf = requestAnimationFrame(() => setVisible(true));
     document.body.style.overflow = "hidden";
     return () => {
@@ -21,7 +21,7 @@ export default function Modal({ children }: Props) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 bg-black transition-opacity duration-200 ${
+      className={`fixed inset-0 z-50 ${background} transition-opacity duration-200 ${
         visible ? "opacity-100" : "opacity-0"
       }`}
     >

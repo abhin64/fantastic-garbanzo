@@ -5,23 +5,29 @@
 /* ── Design tokens ───────────────────────────────────────── */
 :root {
   /* Colors */
-  --color-bg:             #000000;
-  --color-surface:        #111111;
-  --color-surface-raised: #191919;
-  --color-line:           #222222;
-  --color-line-strong:    #303030;
-  --color-text-primary:   #ffffff;
-  --color-text-secondary: #888888;
-  --color-text-tertiary:  #555555;
-  --color-paid:           #c9a84c;
-  --color-paid-bg:        rgba(201, 168, 76, 0.10);
-  --color-paid-border:    rgba(201, 168, 76, 0.22);
+  --color-bg:             #F8F8F8;
+  --color-surface:        #FFFFFF;
+  --color-surface-subtle: #F8F8F8;
+  --color-line:           rgba(0, 0, 0, 0.06);
+  --color-line-strong:    rgba(0, 0, 0, 0.10);
+  --color-line-subtle:    rgba(0, 0, 0, 0.03);
+  --color-text-primary:   #1A1A1A;
+  --color-text-secondary: #6F6F6F;
+  --color-text-tertiary:  #9F9F9F;
+  --color-paid:           #FF7A1F;
+  --color-paid-bg:        rgba(255, 122, 31, 0.08);
+  --color-paid-border:    rgba(255, 122, 31, 0.22);
+  --color-accent:         #3B82F6;
+
+  /* Brand gradient */
+  --gradient-brand: linear-gradient(135deg, #FF4D4D 0%, #FF7A1F 50%, #FFD84D 100%);
+  --gradient-brand-soft: linear-gradient(135deg, rgba(255,77,77,0.07) 0%, rgba(255,122,31,0.07) 50%, rgba(255,216,77,0.07) 100%);
 
   /* Radii */
   --radius-sm:   4px;
   --radius-md:   10px;
   --radius-lg:   12px;
-  --radius-xl:   16px;
+  --radius-xl:   14px;
   --radius-full: 9999px;
 
   /* Motion */
@@ -51,8 +57,8 @@
   }
 
   ::selection {
-    background-color: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
+    background-color: rgba(255, 122, 31, 0.15);
+    color: #1A1A1A;
   }
 
   img {
@@ -73,5 +79,13 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  .gradient-brand {
+    background: var(--gradient-brand);
+  }
+
+  .gradient-brand-soft {
+    background: var(--gradient-brand-soft);
   }
 }

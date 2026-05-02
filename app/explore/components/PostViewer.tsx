@@ -16,8 +16,7 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Flat ordered post list: clicked post first, then rest of its category,
-  // then remaining categories in defined order, wrapping around.
+  // Flat ordered list: clicked post first → rest of its category → remaining categories
   const orderedPosts = useMemo(() => {
     const catIndex = CATEGORIES.indexOf(initialPost.category);
     const orderedCats = [
@@ -34,7 +33,7 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
     return byCat;
   }, [initialPost, allPosts]);
 
-  // Track visible slide
+  // Track visible slide via IntersectionObserver
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -64,7 +63,7 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
   const isCategoryChange = prevCat !== null && prevCat !== current?.category;
 
   return (
-    <Modal>
+    <Modal background="bg-black">
       {/* Top bar: progress + close */}
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center gap-3 px-5 pt-5 pb-3">
         <div className="flex gap-px flex-1">
@@ -76,12 +75,12 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
                   ? "bg-white"
                   : i < currentIndex
                   ? "bg-white/35"
-                  : "bg-white/12"
+                  : "bg-white/15"
               }`}
             />
           ))}
         </div>
-        <IconButton onClick={onClose} aria-label="Close">
+        <IconButton onClick={onClose} aria-label="Close" variant="dark">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
@@ -92,15 +91,15 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
       {/* Category transition label */}
       {isCategoryChange && (
         <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 animate-slide-up">
-          <div className="bg-white/[0.08] backdrop-blur-sm px-3 py-1 rounded-full border border-white/10">
-            <span className="text-label text-white/60 uppercase tracking-widest">
+          <div className="backdrop-blur-sm px-3 py-1 rounded-full border border-white/15" style={{ background: "rgba(255,255,255,0.10)" }}>
+            <span className="text-label text-white/70 uppercase tracking-widest">
               {current?.category}
             </span>
           </div>
         </div>
       )}
 
-      {/* Slide container */}
+      {/* Slides */}
       <div
         ref={containerRef}
         className="h-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
@@ -121,7 +120,15 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
                 className="absolute inset-0 w-full h-full object-cover"
                 loading={i < 3 ? "eager" : "lazy"}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/5 to-transparent pointer-events-none" />
+
+              {/* Warm gradient overlay at bottom */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    "linear-gradient(to top, rgba(20,8,4,0.88) 0%, rgba(30,10,5,0.35) 45%, transparent 100%)",
+                }}
+              />
 
               <div className="absolute bottom-0 left-0 right-0 px-6 pb-12">
                 {postIsPaid && (
@@ -129,14 +136,14 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
                     <Badge variant="paid" />
                   </div>
                 )}
-                <p className="text-label text-white/40 uppercase tracking-widest mb-2">
+                <p className="text-label text-white/45 uppercase tracking-widest mb-2">
                   {post.category}
                 </p>
                 <h2 className="text-h1 text-white leading-tight mb-2">
                   {post.title}
                 </h2>
                 {post.location && (
-                  <p className="flex items-center gap-1.5 text-caption text-white/50">
+                  <p className="flex items-center gap-1.5 text-caption text-white/55">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                       <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                     </svg>
