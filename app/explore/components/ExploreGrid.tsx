@@ -7,11 +7,8 @@ import ExploreCard from "./ExploreCard";
 import PostViewer from "./PostViewer";
 import SectionHeader from "@/app/components/SectionHeader";
 
-// ── Simulated auth state ──────────────────────────────────
 const IS_PAID_USER = false;
 
-// ── Sort posts within a category ──────────────────────────
-// Order: isAI last → isWeatherAware second-to-last → alphabetical
 function sortPosts(posts: Post[]): Post[] {
   return [...posts].sort((a, b) => {
     if (a.isAI !== b.isAI) return a.isAI ? 1 : -1;
@@ -29,10 +26,8 @@ export default function ExploreGrid() {
   );
   const [activePost, setActivePost] = useState<Post | null>(null);
 
-  // Categories sorted by sortOrder (defined in categories.ts)
   const sortedCategories = [...CATEGORIES].sort((a, b) => a.sortOrder - b.sortOrder);
 
-  // Group + sort posts per category
   const postsByCategory = new Map(
     sortedCategories.map((cat) => [
       cat.id,

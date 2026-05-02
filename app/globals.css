@@ -4,33 +4,26 @@
 
 /* ── Design tokens ───────────────────────────────────────── */
 :root {
-  /* Colors */
-  --color-bg:             #F8F8F8;
+  --color-bg:             #F9F6F2;
   --color-surface:        #FFFFFF;
-  --color-surface-subtle: #F8F8F8;
-  --color-line:           rgba(0, 0, 0, 0.06);
-  --color-line-strong:    rgba(0, 0, 0, 0.10);
-  --color-line-subtle:    rgba(0, 0, 0, 0.03);
-  --color-text-primary:   #1A1A1A;
-  --color-text-secondary: #6F6F6F;
-  --color-text-tertiary:  #9F9F9F;
-  --color-paid:           #FF7A1F;
-  --color-paid-bg:        rgba(255, 122, 31, 0.08);
-  --color-paid-border:    rgba(255, 122, 31, 0.22);
-  --color-accent:         #3B82F6;
+  --color-surface-subtle: #F2EFE9;
+  --color-line:           rgba(0, 0, 0, 0.07);
+  --color-line-strong:    rgba(0, 0, 0, 0.12);
+  --color-line-subtle:    rgba(0, 0, 0, 0.04);
+  --color-text-primary:   #111111;
+  --color-text-secondary: #737373;
+  --color-text-tertiary:  #A0A0A0;
+  --color-paid:           #C0392B;
+  --color-paid-bg:        rgba(192, 57, 43, 0.07);
+  --color-paid-border:    rgba(192, 57, 43, 0.18);
+  --color-accent:         #111111;
 
-  /* Brand gradient */
-  --gradient-brand: linear-gradient(135deg, #FF4D4D 0%, #FF7A1F 50%, #FFD84D 100%);
-  --gradient-brand-soft: linear-gradient(135deg, rgba(255,77,77,0.07) 0%, rgba(255,122,31,0.07) 50%, rgba(255,216,77,0.07) 100%);
-
-  /* Radii */
   --radius-sm:   4px;
   --radius-md:   10px;
   --radius-lg:   12px;
   --radius-xl:   14px;
   --radius-full: 9999px;
 
-  /* Motion */
   --duration-fast:  100ms;
   --duration-base:  200ms;
   --duration-slow:  300ms;
@@ -39,9 +32,7 @@
 
 /* ── Base reset ──────────────────────────────────────────── */
 @layer base {
-  *, *::before, *::after {
-    box-sizing: border-box;
-  }
+  *, *::before, *::after { box-sizing: border-box; }
 
   html {
     scroll-behavior: smooth;
@@ -57,18 +48,12 @@
   }
 
   ::selection {
-    background-color: rgba(255, 122, 31, 0.15);
-    color: #1A1A1A;
+    background-color: rgba(0, 0, 0, 0.10);
+    color: #111111;
   }
 
-  img {
-    display: block;
-    max-width: 100%;
-  }
-
-  button {
-    cursor: pointer;
-  }
+  img { display: block; max-width: 100%; }
+  button { cursor: pointer; }
 }
 
 /* ── Utilities ───────────────────────────────────────────── */
@@ -77,15 +62,5 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-
-  .gradient-brand {
-    background: var(--gradient-brand);
-  }
-
-  .gradient-brand-soft {
-    background: var(--gradient-brand-soft);
-  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
 }
