@@ -1,46 +1,71 @@
 "use client";
 
 import { useState } from "react";
-import { explorePosts, CATEGORIES, type Post } from "@/lib/data/explorePosts";
+import { explorePosts, type Post } from "@/lib/data/explorePosts";
+import { CATEGORIES } from "@/lib/data/categories";
 import ExploreCard from "./ExploreCard";
 import PostViewer from "./PostViewer";
 import SectionHeader from "@/app/components/SectionHeader";
+
+// ── Simulated auth state ──────────────────────────────────
+const IS_PAID_USER = false;
+
+// ── Sort posts within a category ──────────────────────────
+// Order: isAI last → isWeatherAware second-to-last → alphabetical
+function sortPosts(posts: Post[]): Post[] {
+  return [...posts].sort((a, b) => {
+    if (a.isAI !== b.isAI) return a.isAI ? 1 : -1;
+    if (a.isWeatherAware !== b.isWeatherAware) return a.isWeatherAware ? 1 : -1;
+    return a.title.localeCompare(b.title);
+  });
+}
 
 const INITIAL_COUNT = 6;
 const LOAD_MORE_STEP = 4;
 
 export default function ExploreGrid() {
   const [visibleCount, setVisibleCount] = useState<Record<string, number>>(
-    Object.fromEntries(CATEGORIES.map((c) => [c, INITIAL_COUNT]))
+    Object.fromEntries(CATEGORIES.map((c) => [c.id, INITIAL_COUNT]))
   );
   const [activePost, setActivePost] = useState<Post | null>(null);
 
-  const postsByCategory = Object.fromEntries(
-    CATEGORIES.map((cat) => [cat, explorePosts.filter((p) => p.category === cat)])
+  // Categories sorted by sortOrder (defined in categories.ts)
+  const sortedCategories = [...CATEGORIES].sort((a, b) => a.sortOrder - b.sortOrder);
+
+  // Group + sort posts per category
+  const postsByCategory = new Map(
+    sortedCategories.map((cat) => [
+      cat.id,
+      sortPosts(explorePosts.filter((p) => p.categoryId === cat.id)),
+    ])
   );
 
   return (
     <>
       <div className="space-y-10">
-        {CATEGORIES.map((category) => {
-          const posts = postsByCategory[category];
+        {sortedCategories.map((category) => {
+          const posts = postsByCategory.get(category.id) ?? [];
           if (!posts.length) return null;
 
-          const shown = posts.slice(0, visibleCount[category]);
+          const shown = posts.slice(0, visibleCount[category.id]);
           const hasMore = shown.length < posts.length;
-          const isPaidCategory = category === "AI Ideas" || category === "Weather-Aware";
 
           return (
-            <section key={category}>
+            <section key={category.id}>
               <SectionHeader
-                title={category}
+                title={category.name}
                 count={posts.length}
-                isPaid={isPaidCategory}
+                isPaid={category.isPaid}
               />
 
               <div className="columns-2 md:columns-3 gap-3">
                 {shown.map((post) => (
-                  <ExploreCard key={post.id} post={post} onClick={setActivePost} />
+                  <ExploreCard
+                    key={post.id}
+                    post={post}
+                    isPaidUser={IS_PAID_USER}
+                    onClick={setActivePost}
+                  />
                 ))}
               </div>
 
@@ -49,7 +74,7 @@ export default function ExploreGrid() {
                   onClick={() =>
                     setVisibleCount((prev) => ({
                       ...prev,
-                      [category]: prev[category] + LOAD_MORE_STEP,
+                      [category.id]: prev[category.id] + LOAD_MORE_STEP,
                     }))
                   }
                   className="mt-3 w-full py-2.5 rounded-xl text-label text-ink-secondary uppercase tracking-widest transition-colors duration-150 hover:bg-surface"
@@ -67,6 +92,7 @@ export default function ExploreGrid() {
         <PostViewer
           initialPost={activePost}
           allPosts={explorePosts}
+          isPaidUser={IS_PAID_USER}
           onClose={() => setActivePost(null)}
         />
       )}

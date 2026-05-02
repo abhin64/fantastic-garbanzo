@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useMemo, useState } from "react";
-import { type Post, CATEGORIES } from "@/lib/data/explorePosts";
+import { type Post } from "@/lib/data/explorePosts";
+import { CATEGORIES } from "@/lib/data/categories";
 import Modal from "@/app/components/Modal";
 import IconButton from "@/app/components/IconButton";
 import Badge from "@/app/components/Badge";
@@ -9,23 +10,39 @@ import Badge from "@/app/components/Badge";
 interface Props {
   initialPost: Post;
   allPosts: Post[];
+  isPaidUser: boolean;
   onClose: () => void;
 }
 
-export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
+function LockIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden>
+      <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+    </svg>
+  );
+}
+
+export default function PostViewer({ initialPost, allPosts, isPaidUser, onClose }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Flat ordered list: clicked post first → rest of its category → remaining categories
+  // Build ordered list: clicked post first → rest of its category → remaining
+  // categories in sortOrder, wrapping around
   const orderedPosts = useMemo(() => {
-    const catIndex = CATEGORIES.indexOf(initialPost.category);
-    const orderedCats = [
-      ...CATEGORIES.slice(catIndex),
-      ...CATEGORIES.slice(0, catIndex),
+    const sortedCategoryIds = [...CATEGORIES]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((c) => c.id);
+
+    const catIndex = sortedCategoryIds.indexOf(initialPost.categoryId);
+    const orderedCatIds = [
+      ...sortedCategoryIds.slice(catIndex),
+      ...sortedCategoryIds.slice(0, catIndex),
     ];
-    const byCat = orderedCats.flatMap((cat) =>
-      allPosts.filter((p) => p.category === cat)
+
+    const byCat = orderedCatIds.flatMap((id) =>
+      allPosts.filter((p) => p.categoryId === id)
     );
+
     const clickedIdx = byCat.findIndex((p) => p.id === initialPost.id);
     if (clickedIdx > 0) {
       return [byCat[clickedIdx], ...byCat.slice(0, clickedIdx), ...byCat.slice(clickedIdx + 1)];
@@ -59,8 +76,13 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
   }, [onClose]);
 
   const current = orderedPosts[currentIndex];
-  const prevCat = currentIndex > 0 ? orderedPosts[currentIndex - 1]?.category : null;
-  const isCategoryChange = prevCat !== null && prevCat !== current?.category;
+  const prevCat = currentIndex > 0 ? orderedPosts[currentIndex - 1]?.categoryId : null;
+  const isCategoryChange = prevCat !== null && prevCat !== current?.categoryId;
+
+  const isCurrentPaid = current?.isAI || current?.isWeatherAware;
+  const isPaywalled = isCurrentPaid && !isPaidUser;
+
+  const categoryName = CATEGORIES.find((c) => c.id === current?.categoryId)?.name ?? "";
 
   return (
     <Modal background="bg-black">
@@ -71,11 +93,7 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
             <div
               key={i}
               className={`h-px flex-1 rounded-full transition-colors duration-200 ${
-                i === currentIndex
-                  ? "bg-white"
-                  : i < currentIndex
-                  ? "bg-white/35"
-                  : "bg-white/15"
+                i === currentIndex ? "bg-white" : i < currentIndex ? "bg-white/35" : "bg-white/15"
               }`}
             />
           ))}
@@ -91,9 +109,12 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
       {/* Category transition label */}
       {isCategoryChange && (
         <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 animate-slide-up">
-          <div className="backdrop-blur-sm px-3 py-1 rounded-full border border-white/15" style={{ background: "rgba(255,255,255,0.10)" }}>
+          <div
+            className="backdrop-blur-sm px-3 py-1 rounded-full border border-white/15"
+            style={{ background: "rgba(255,255,255,0.10)" }}
+          >
             <span className="text-label text-white/70 uppercase tracking-widest">
-              {current?.category}
+              {categoryName}
             </span>
           </div>
         </div>
@@ -120,8 +141,6 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
                 className="absolute inset-0 w-full h-full object-cover"
                 loading={i < 3 ? "eager" : "lazy"}
               />
-
-              {/* Warm gradient overlay at bottom */}
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
@@ -129,7 +148,6 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
                     "linear-gradient(to top, rgba(20,8,4,0.88) 0%, rgba(30,10,5,0.35) 45%, transparent 100%)",
                 }}
               />
-
               <div className="absolute bottom-0 left-0 right-0 px-6 pb-12">
                 {postIsPaid && (
                   <div className="mb-3">
@@ -137,11 +155,9 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
                   </div>
                 )}
                 <p className="text-label text-white/45 uppercase tracking-widest mb-2">
-                  {post.category}
+                  {CATEGORIES.find((c) => c.id === post.categoryId)?.name}
                 </p>
-                <h2 className="text-h1 text-white leading-tight mb-2">
-                  {post.title}
-                </h2>
+                <h2 className="text-h1 text-white leading-tight mb-2">{post.title}</h2>
                 {post.location && (
                   <p className="flex items-center gap-1.5 text-caption text-white/55">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -155,6 +171,39 @@ export default function PostViewer({ initialPost, allPosts, onClose }: Props) {
           );
         })}
       </div>
+
+      {/* Paywall overlay — shown when scrolling into a paid post */}
+      {isPaywalled && (
+        <div
+          className="absolute inset-0 z-30 flex items-end justify-center pb-16 animate-fade-in"
+          style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(16px)" }}
+        >
+          <div className="bg-surface rounded-2xl p-7 mx-5 w-full max-w-sm text-center shadow-overlay">
+            <div
+              className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center shadow-card"
+              style={{ background: "var(--gradient-brand)" }}
+            >
+              <LockIcon />
+            </div>
+            <h3 className="text-h3 text-ink mb-1">LinkUp Premium</h3>
+            <p className="text-body text-ink-secondary mb-6">
+              This feature requires LinkUp Premium
+            </p>
+            <button
+              className="w-full py-3 rounded-xl text-white text-h4 shadow-card mb-3"
+              style={{ background: "var(--gradient-brand)" }}
+            >
+              Upgrade
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full py-2.5 text-body text-ink-secondary hover:text-ink transition-colors duration-150"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Swipe hint — first slide only */}
       {currentIndex === 0 && (
