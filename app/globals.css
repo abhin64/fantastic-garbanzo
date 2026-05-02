@@ -2,6 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design tokens ───────────────────────────────────────── */
+:root {
+  /* Colors */
+  --color-bg:             #000000;
+  --color-surface:        #111111;
+  --color-surface-raised: #191919;
+  --color-line:           #222222;
+  --color-line-strong:    #303030;
+  --color-text-primary:   #ffffff;
+  --color-text-secondary: #888888;
+  --color-text-tertiary:  #555555;
+  --color-paid:           #c9a84c;
+  --color-paid-bg:        rgba(201, 168, 76, 0.10);
+  --color-paid-border:    rgba(201, 168, 76, 0.22);
+
+  /* Radii */
+  --radius-sm:   4px;
+  --radius-md:   10px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-full: 9999px;
+
+  /* Motion */
+  --duration-fast:  100ms;
+  --duration-base:  200ms;
+  --duration-slow:  300ms;
+  --ease-smooth:    cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ── Base reset ──────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+  }
+
+  ::selection {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
+  button {
+    cursor: pointer;
+  }
+}
+
+/* ── Utilities ───────────────────────────────────────────── */
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
